@@ -1,0 +1,8 @@
+{
+    "python.defaultInterpreterPath": "/Users/anvi/Desktop/ForReal/backend/venv/bin/python",
+    "python.pythonPath": "/Users/anvi/Desktop/ForReal/backend/venv/bin/python",
+    "python.analysis.extraPaths": [
+        "/Users/anvi/Desktop/ForReal/backend/venv/lib/python3.13/site-packages"
+    ],
+    "python.analysis.autoSearchPaths": true
+}
