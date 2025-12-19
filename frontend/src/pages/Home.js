@@ -28,7 +28,7 @@ export default function Home() {
               
               {/* Description */}
               <p className="text-lg sm:text-xl text-white/50 max-w-md leading-relaxed">
-              AI trying to trick you?  Scan images to see what's truely real and what's not. Upload, check, or play-spot the AI before it spots you!
+              AI trying to trick you?  Scan images of faces to see who's truely real and who's not. Upload, check, or play-spot the AI before it spots you!
               </p>
 
               {/* CTA Buttons */}

@@ -1,15 +1,11 @@
 import torch 
 import torch.nn as nn
-from torchvision import transforms
-import torch.nn.functional as F
+from torchvision import transforms, models
 from PIL import Image
 import os
-import timm
 
-model_path = os.path.join(os.path.dirname(__file__), "..", "model", "best_model.pth")
-
-# Confidence threshold - only predict AI if confidence is above this
-AI_THRESHOLD = 0.9996  # 99.96% confidence required to call something AI
+# Path to the new DenseNet121 model trained on 140k Real vs Fake Faces
+model_path = os.path.join(os.path.dirname(__file__), "..", "model", "best_densenet121_unfreeze_lastblock.pth")
 
 
 class ModelWrapper:
@@ -19,6 +15,7 @@ class ModelWrapper:
         self.model.to(self.device)
         self.model.eval()
 
+        # Same transforms as training
         self.transform = transforms.Compose([
             transforms.Resize((224, 224)),
             transforms.ToTensor(),
@@ -28,10 +25,9 @@ class ModelWrapper:
             ),
         ])
 
-        # Note: Model trained on CIFAKE dataset (small synthetic images)
-        # May not generalize well to real-world photos
-        # Index 0 = FAKE (AI), Index 1 = REAL
-        self.labels = {0: "AI", 1: "REAL"}
+        # From training: classes = ['fake', 'real']
+        # Sigmoid output >= 0.5 → REAL (class 1)
+        # Sigmoid output < 0.5 → FAKE (class 0)
 
     def _load_model(self):
         if not os.path.exists(model_path):
@@ -39,16 +35,14 @@ class ModelWrapper:
         
         print(f"Loading model from {model_path}...")
         
-        # Create the exact same architecture as in your Colab notebook
-        model = timm.create_model('tf_efficientnetv2_b0.in1k', pretrained=False)
-        
-        # Replace classifier with your custom head (same as training)
+        # Create DenseNet121 with custom classifier (same as training)
+        model = models.densenet121(weights=None)
         model.classifier = nn.Sequential(
-            nn.Dropout(0.4),
-            nn.Linear(model.classifier.in_features, 256),
+            nn.Linear(1024, 512),
             nn.ReLU(),
+            nn.BatchNorm1d(512),
             nn.Dropout(0.3),
-            nn.Linear(256, 2)
+            nn.Linear(512, 1)
         )
         
         # Load the saved weights
@@ -60,7 +54,7 @@ class ModelWrapper:
 
     def predict(self, pil_image: Image.Image):
         """Run prediction on a PIL image."""
-        # Ensure RGB mode (some images are RGBA, grayscale, etc.)
+        # Ensure RGB mode
         if pil_image.mode != "RGB":
             pil_image = pil_image.convert("RGB")
         
@@ -69,36 +63,25 @@ class ModelWrapper:
 
         # 2. Inference
         with torch.no_grad():
-            logits = self.model(x)
-            
-            # Apply temperature scaling to soften extreme predictions
-            temperature = 2.0  # Higher = softer probabilities
-            scaled_logits = logits / temperature
-            
-            probs = F.softmax(scaled_logits, dim=1).cpu().numpy()[0]
+            output = self.model(x).squeeze()  # Single value
+            prob_real = torch.sigmoid(output).item()  # Probability of being REAL
+            prob_fake = 1.0 - prob_real  # Probability of being FAKE/AI
         
-        # 3. Determine prediction with threshold
-        prob_ai = float(probs[0])
-        prob_real = float(probs[1])
-        
-        # Only predict AI if confidence is above threshold
-        # Otherwise, always predict REAL and swap the probabilities for display
-        if prob_ai >= AI_THRESHOLD:
-            pred_idx = 0  # AI
-            label = "AI"
-            display_probs = [prob_ai, prob_real]  # Keep as-is
-        else:
-            # Classify as REAL and swap probabilities for display
-            # So the high confidence shows as REAL confidence
-            pred_idx = 1
+        # 3. Determine prediction
+        # Sigmoid >= 0.5 means REAL, < 0.5 means FAKE
+        if prob_real >= 0.5:
             label = "REAL"
-            display_probs = [prob_real, prob_ai]  # Swapped: [AI, REAL] becomes [REAL's value, AI's value]
+            confidence = prob_real
+        else:
+            label = "AI"
+            confidence = prob_fake
 
         # Debug output
-        print(f"🔍 Raw: AI={prob_ai:.2%}, REAL={prob_real:.2%} → Display: AI={display_probs[0]:.2%}, REAL={display_probs[1]:.2%} → {label}")
+        print(f"🔍 Probs: FAKE={prob_fake:.2%}, REAL={prob_real:.2%} → {label} ({confidence:.2%})")
 
         return {
             "label": label,
-            "index": pred_idx,
-            "probabilities": display_probs
+            "index": 0 if label == "AI" else 1,
+            "probabilities": [prob_fake, prob_real],  # [AI/FAKE, REAL]
+            "confidence": round(confidence * 100, 2)
         }

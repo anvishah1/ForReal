@@ -11,24 +11,38 @@ export default function Guess() {
   const [imageLoading, setImageLoading] = useState(true);
   const [gameStarted, setGameStarted] = useState(false);
 
-  // Sample images for the guessing game - replace with backend API later
+  // Real images from 140k Real and Fake Faces dataset
+  const realImages = [
+    '00168.jpg', '01425.jpg', '02462.jpg', '03553.jpg', '08721.jpg',
+    '09569.jpg', '10549.jpg', '11495.jpg', '12390.jpg', '13510.jpg',
+    '14212.jpg', '16131.jpg', '16328.jpg', '16344.jpg', '19288.jpg',
+    '22229.jpg', '25854.jpg', '26247.jpg', '27254.jpg', '27833.jpg',
+    '31964.jpg', '32089.jpg', '32246.jpg', '33969.jpg', '34237.jpg',
+    '34880.jpg', '39067.jpg', '40260.jpg', '40623.jpg', '41215.jpg',
+    '41938.jpg', '43353.jpg', '46306.jpg', '49433.jpg', '50629.jpg',
+    '52198.jpg', '52971.jpg', '53697.jpg', '53754.jpg', '54187.jpg',
+    '57012.jpg', '57045.jpg', '61453.jpg', '61945.jpg', '63436.jpg',
+    '63793.jpg', '64135.jpg', '67540.jpg', '69252.jpg', '69335.jpg'
+  ];
+
+  // AI-generated (fake) images from 140k Real and Fake Faces dataset
+  const fakeImages = [
+    '0TFRQPXR1X.jpg', '1NFGLXUFYS.jpg', '2TOCMQKPQM.jpg', '4RQPF1PWZW.jpg', '4W11OUXXJQ.jpg',
+    '584TLVNMB5.jpg', '59E68NDUTY.jpg', '5GXE1SSNM0.jpg', '62PBAUAJFG.jpg', '6AARXSFB1D.jpg',
+    '7ZYC2UHV1R.jpg', '977VOO6HS3.jpg', 'AXCMF459N5.jpg', 'BOP21MV1KF.jpg', 'DZGRZ5WU1D.jpg',
+    'FGNSN769OA.jpg', 'FLZVRNSDZ9.jpg', 'HWPHD8TIN5.jpg', 'ISV6FVY6CY.jpg', 'IVUJ2Y82RQ.jpg',
+    'JZHYA672BI.jpg', 'KNSACM68SD.jpg', 'KRWUG1T9ZN.jpg', 'LG5LG2XB5H.jpg', 'LRZUHETR9J.jpg',
+    'NO5NYDZOKD.jpg', 'OUOMPZ1AZF.jpg', 'OZ3LUW3MBG.jpg', 'P3LVJLBQXW.jpg', 'PE592GEU4P.jpg',
+    'PY6ZWSWD0H.jpg', 'QK9VLCVIBE.jpg', 'RFDE8JGZ0P.jpg', 'SDC1M1UT7J.jpg', 'SREXRD97AY.jpg',
+    'SYU7G3BAM7.jpg', 'TDJE6TXNN8.jpg', 'TUA3HESX88.jpg', 'UVA5KOI5OG.jpg', 'V21P2X29OG.jpg',
+    'WRGISUG7OV.jpg', 'WWLKGXCZEX.jpg', 'X7WSSVM2DL.jpg', 'XNLDCFA367.jpg', 'YF2DOWHO4G.jpg',
+    'YLHLUR6QNU.jpg', 'Z4V1SQBEOG.jpg', 'Z8UA13AG4N.jpg', 'Z9X8WZU3KS.jpg', 'ZIPN2T1YFA.jpg'
+  ];
+
+  // Combine into sampleImages array with proper paths
   const sampleImages = [
-    { 
-      url: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=500',
-      isAI: false,
-    },
-    { 
-      url: 'https://images.unsplash.com/photo-1535268647677-300dbf3d78d1?w=500',
-      isAI: false,
-    },
-    { 
-      url: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=500',
-      isAI: true,
-    },
-    { 
-      url: 'https://images.unsplash.com/photo-1686191128892-3b37add4c844?w=500',
-      isAI: true,
-    }
+    ...realImages.map(img => ({ url: `/game-images/real/${img}`, isAI: false })),
+    ...fakeImages.map(img => ({ url: `/game-images/fake/${img}`, isAI: true }))
   ];
 
   const startGame = () => {

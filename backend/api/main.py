@@ -109,3 +109,8 @@ async def predict(file: UploadFile = File(...)):
 
 
 
+
+
+
+
+
